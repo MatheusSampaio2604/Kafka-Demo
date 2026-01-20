@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Demo/">
+    <File Path="docker-compose.yml" />
+  </Folder>
+  <Project Path="Consumer.Worker/Consumer.Worker.csproj" />
+  <Project Path="Producer.Api/Producer.Api.csproj" />
+  <Project Path="Shared.Contracts/Shared.Contracts.csproj" />
+</Solution>
