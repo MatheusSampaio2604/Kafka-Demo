@@ -1,4 +1,6 @@
 using Confluent.Kafka;
+using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.Serdes;
 using Shared.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);

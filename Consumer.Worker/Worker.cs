@@ -127,3 +127,4 @@ namespace Consumer.Worker
             _logger.LogWarning("Mensagem reenviada para {NextTopic} - Pedido {OrderId}", nextTopic, result.Message.Value.OrderId);
         }
     }
+}
