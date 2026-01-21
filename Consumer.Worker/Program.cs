@@ -1,19 +1,26 @@
-using Consumer.Worker;
 using Confluent.Kafka;
-using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
-using Confluent.SchemaRegistry.Serdes;
+using Consumer.Worker;
+using Consumer.Worker.Configuration;
+using Consumer.Worker.Consumers;
+using Consumer.Worker.Consumers.Common;
+using Consumer.Worker.Services;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
 
+builder.Services.AddHostedService<OrderConsumer>();
+
+builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
 builder.Services.AddSingleton<ISchemaRegistryClient>(sp =>
-{
-    return new CachedSchemaRegistryClient(new SchemaRegistryConfig
+    new CachedSchemaRegistryClient(new SchemaRegistryConfig
     {
-        Url = "http://localhost:8081"
-    });
-});
+        Url = builder.Configuration["Kafka:SchemaRegistryUrl"]
+    }));
+
+//builder.Services.AddScoped(typeof(ICommonConsumer<>), typeof(CommonConsumer<>));
+builder.Services.AddSingleton(typeof(IMessageRequeuer<>), typeof(MessageRequeuer<>));
+
+builder.Services.AddSingleton<IOrderProcessingService, OrderProcessingService>();
 
 var host = builder.Build();
 host.Run();

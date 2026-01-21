@@ -1,7 +1,6 @@
-using Confluent.Kafka;
 using Confluent.SchemaRegistry;
-using Confluent.SchemaRegistry.Serdes;
-using Shared.Contracts;
+using Producer.Api.Configuration;
+using Producer.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,40 +10,20 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddSingleton<IProducer<Null, string>>(sp =>
-{
-    var config = new ProducerConfig
+// 1. Configuração do Kafka
+builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
+var kafkaOptions = builder.Configuration.GetSection("Kafka").Get<KafkaOptions>()!;
+
+// 2. Schema Registry
+builder.Services.AddSingleton<ISchemaRegistryClient>(sp =>
+    new CachedSchemaRegistryClient(new SchemaRegistryConfig
     {
-        BootstrapServers = "localhost:9092",
-        Acks = Acks.All,
-        EnableIdempotence = true, //Exactly once delivery
-        MessageSendMaxRetries = 100,
-        RetryBackoffMs = 1000,
-        MessageTimeoutMs = 30000
-    };
-    return new ProducerBuilder<Null, string>(config)
-        .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e}"))
-        .Build();
-});
+        Url = kafkaOptions.SchemaRegistryUrl
+    }));
 
-    // Producer com Avro + Schema Registry (melhor prática)
-builder.Services.AddSingleton<IProducer<string, OrderCreated>>(sp =>
-{
-    var config = new ProducerConfig { BootstrapServers = "localhost:9092" };
-
-    var schemaRegistryConfig = new SchemaRegistryConfig
-    {
-        Url = "http://localhost:8081"
-    };
-
-    var avroSerializer = new AvroSerializer<OrderCreated>(
-        new CachedSchemaRegistryClient(schemaRegistryConfig));
-
-    return new ProducerBuilder<string, OrderCreated>(config)
-        .SetValueSerializer(avroSerializer)
-        .Build();
-});
-
+// 3. Producers (separados!)
+builder.Services.AddSingleton<IOrderProducer, OrderProducer>();
+builder.Services.AddSingleton<IRetryProducer, RetryProducer>();
 
 var app = builder.Build();
 

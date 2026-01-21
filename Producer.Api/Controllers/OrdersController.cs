@@ -1,5 +1,6 @@
 ﻿using Confluent.Kafka;
 using Microsoft.AspNetCore.Mvc;
+using Producer.Api.Services;
 using Shared.Contracts;
 using System.Text;
 using System.Text.Json;
@@ -12,60 +13,42 @@ namespace Producer.Api.Controllers
     [ApiController]
     public class OrdersController : ControllerBase
     {
-        private readonly IProducer<Null, string> _stringProducer;
-        private readonly IProducer<string, OrderCreated> _avroProducer;
-
+        private readonly IOrderProducer _producer;
         public OrdersController(
-            IProducer<Null, string> stringProducer,
-            IProducer<string, OrderCreated> avroProducer)
+            IOrderProducer producer
+            )
         {
-            _stringProducer = stringProducer;
-            _avroProducer = avroProducer;
+            _producer = producer;
         }
 
         [HttpPost("string")]
         public async Task<IActionResult> SendString([FromBody] OrderCreated order)
         {
-            var message = JsonSerializer.Serialize(order);
-            await _stringProducer.ProduceAsync("orders-string-topic", new() { Value = message });
+            await _producer.ProduceAsync(order);
 
             return Ok("Enviado como string/JSON");
         }
 
-        [HttpPost("avro")]
-        public async Task<IActionResult> SendAvro([FromBody] OrderCreated order)
-        {
-            var message = new Message<string, OrderCreated>
-            {
-                Key = order.OrderId.ToString(),
-                Value = order
-            };
+        //[HttpPost("rich")]
+        //public async Task<IActionResult> SendRich([FromBody] OrderCreated order)
+        //{
+        //    var headers = new Headers
+        //    {
+        //        {"source", Encoding.UTF8.GetBytes("producer-api-v2") },
+        //        { "tenant", Encoding.UTF8.GetBytes("br") },
+        //        { "event-type", Encoding.UTF8.GetBytes("OrderCreated")  }
+        //    };
 
-            var result = await _avroProducer.ProduceAsync("orders-avro-topic", message);
+        //    var message = new Message<string, OrderCreated>
+        //    {
+        //        Key = order.CustomerId,
+        //        Value = order,
+        //        Headers = headers
+        //    };
 
-            return Ok($"Enviado com Avro! Offset: {result.Offset}");
-        }
+        //    await _avroProducer.ProduceAsync("orders-enriched-topic", message);
 
-        [HttpPost("rich")]
-        public async Task<IActionResult> SendRich([FromBody] OrderCreated order)
-        {
-            var headers = new Headers
-            {
-                {"source", Encoding.UTF8.GetBytes("producer-api-v2") },
-                { "tenant", Encoding.UTF8.GetBytes("br") },
-                { "event-type", Encoding.UTF8.GetBytes("OrderCreated")  }
-            };
-
-            var message = new Message<string, OrderCreated>
-            {
-                Key = order.CustomerId,
-                Value = order,
-                Headers = headers
-            };
-
-            await _avroProducer.ProduceAsync("orders-enriched-topic", message);
-
-            return Ok("Enviado com headers e chave customizada");
-        }
+        //    return Ok("Enviado com headers e chave customizada");
+        //}
     }
 }
