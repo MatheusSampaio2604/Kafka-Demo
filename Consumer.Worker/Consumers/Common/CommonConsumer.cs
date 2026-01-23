@@ -2,20 +2,21 @@
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
-using Consumer.Worker.Configuration;
+using Shared.Contracts.Configuration;
 using Microsoft.Extensions.Options;
 
 namespace Consumer.Worker.Consumers.Common
 {
-    public abstract class CommonConsumer<T> : BackgroundService where T : class
+    public abstract class CommonConsumer<TKey, TValue> : BackgroundService where TValue : class
+                                                                           where TKey : class
     {
-        public readonly ILogger<CommonConsumer<T>> _logger;
-        public readonly IConsumer<string, T> _consumer;
+        public readonly ILogger<CommonConsumer<TKey, TValue>> _logger;
+        public readonly IConsumer<TKey, TValue> _consumer;
 
         public readonly KafkaOptions _options;
 
         public CommonConsumer(
-            ILogger<CommonConsumer<T>> logger,
+            ILogger<CommonConsumer<TKey, TValue>> logger,
             ISchemaRegistryClient schemaRegistry,
             IOptions<KafkaOptions> config)
         {
@@ -31,9 +32,9 @@ namespace Consumer.Worker.Consumers.Common
                 EnableAutoOffsetStore = false
             };
 
-            _consumer = new ConsumerBuilder<string, T>(consumerConfig)
-                .SetKeyDeserializer(Deserializers.Utf8)
-                .SetValueDeserializer(new JsonDeserializer<T>(schemaRegistry).AsSyncOverAsync())
+            _consumer = new ConsumerBuilder<TKey, TValue>(consumerConfig)
+                .SetKeyDeserializer(new JsonDeserializer<TKey>(schemaRegistry).AsSyncOverAsync())
+                .SetValueDeserializer(new JsonDeserializer<TValue>(schemaRegistry).AsSyncOverAsync())
                 .Build();
         }
 

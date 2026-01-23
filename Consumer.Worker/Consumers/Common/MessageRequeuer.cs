@@ -1,14 +1,14 @@
 ﻿using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
-using Consumer.Worker.Configuration;
+using Shared.Contracts.Configuration;
 using Microsoft.Extensions.Options;
 using Shared.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Consumer.Worker.Consumers
+namespace Consumer.Worker.Consumers.Common
 {
     public interface IMessageRequeuer<T> where T : class
     {
@@ -48,15 +48,15 @@ namespace Consumer.Worker.Consumers
         {
             var currentTopic = result.Topic;
 
-            var nextTopic = currentTopic switch
-            {
-                var t when t == _options.MainTopic || t.Contains("enriched") || t.Contains("string") => _options.RetryTopic5s,
-                var t when t == _options.RetryTopic5s => _options.RetryTopic30s,
-                var t when t == _options.RetryTopic30s => _options.RetryTopic5m,
-                var t when t == _options.RetryTopic5m => _options.RetryTopic1h,
-                var t when t == _options.RetryTopic1h => _options.DltTopic,
-                _ => _options.DltTopic
-            };
+            //var nextTopic = currentTopic switch
+            //{
+            //    var t when t == _options.MainTopic || t.Contains("enriched") || t.Contains("string") => _options.RetryTopic5s,
+            //    var t when t == _options.RetryTopic5s => _options.RetryTopic30s,
+            //    var t when t == _options.RetryTopic30s => _options.RetryTopic5m,
+            //    var t when t == _options.RetryTopic5m => _options.RetryTopic1h,
+            //    var t when t == _options.RetryTopic1h => _options.DltTopic,
+            //    _ => _options.DltTopic
+            //};
 
             // Copia e incrementa o retry-count
             var headers = new Headers();
@@ -75,7 +75,7 @@ namespace Consumer.Worker.Consumers
             if (reason != null)
                 headers.Add("retry-reason", Encoding.UTF8.GetBytes(reason));
 
-            await _producer.ProduceAsync(nextTopic, new Message<string, T>
+            await _producer.ProduceAsync(/*nextTopic*/currentTopic, new Message<string, T>
             {
                 Key = result.Message.Key,
                 Value = result.Message.Value,
@@ -83,8 +83,8 @@ namespace Consumer.Worker.Consumers
             }, ct);
 
             if (_logger.IsEnabled(LogLevel.Warning))
-                _logger.LogWarning("Mensagem reenfileirada para {NextTopic} | Tentativa {Count} | Motivo: {Reason}",
-                    nextTopic, currentCount + 1, reason ?? "Processamento falhou");
+                _logger.LogWarning("Message requeued to {NextTopic} | Attempt {Count} | Reason: {Reason}",
+                    /*nextTopic*/currentTopic, currentCount + 1, reason ?? "Processing failed");            
         }
     }
 }

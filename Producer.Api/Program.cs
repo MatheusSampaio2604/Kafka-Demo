@@ -1,5 +1,5 @@
 using Confluent.SchemaRegistry;
-using Producer.Api.Configuration;
+using Shared.Contracts.Configuration;
 using Producer.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,8 +22,9 @@ builder.Services.AddSingleton<ISchemaRegistryClient>(sp =>
     }));
 
 // 3. Producers (separados!)
-builder.Services.AddSingleton<IOrderProducer, OrderProducer>();
-builder.Services.AddSingleton<IRetryProducer, RetryProducer>();
+builder.Services.AddSingleton<IMaterialLocationProducer, MaterialLocationProducer>();
+builder.Services.AddSingleton<IMaterialMovementProducer, MaterialMovementProducer>();
+builder.Services.AddSingleton<IVehicleDetectionProducer, VehicleDetectionProducer>();
 
 var app = builder.Build();
 
