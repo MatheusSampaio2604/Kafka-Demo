@@ -5,42 +5,41 @@ using Shared.Contracts;
 using Shared.Contracts.Producer.MaterialMovement;
 using System.Threading.Tasks;
 
-namespace Producer.Api.Controllers
+namespace Producer.Api.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class MaterialMovementController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class MaterialMovementController : ControllerBase
+    private readonly IMaterialMovementProducer _producer;
+
+    public MaterialMovementController(IMaterialMovementProducer producer)
     {
-        private readonly IMaterialMovementProducer _producer;
+        _producer = producer;
+    }
 
-        public MaterialMovementController(IMaterialMovementProducer producer)
+    [HttpPost]
+    public async Task<IActionResult> Index([FromBody] dynamic data)
+    {
+        HeaderCommon headers = new()
         {
-            _producer = producer;
-        }
+            Message = "MaterialMovement",
+            Tenant = "PD-BL"
+        };
 
-        [HttpPost]
-        public async Task<IActionResult> Index([FromBody] dynamic data)
+        MessageData message = new()
         {
-            HeaderCommon headers = new()
-            {
-                Message = "MaterialMovement",
-                Tenant = "PD-BL"
-            };
+            MovementTime = data.MovementTime,
+            Yard = data.Yard,
+            Location = data.Location,
+            X = data.X,
+            Y = data.Y,
+            Equipment = data.Equipment,
+            UserName = data.UserName,
+            Materials = data.Materials,
+            Warnings = data.Warnings
+        };
 
-            MessageData message = new()
-            {
-                MovementTime = data.MovementTime,
-                Yard = data.Yard,
-                Location = data.Location,
-                X = data.X,
-                Y = data.Y,
-                Equipment = data.Equipment,
-                UserName = data.UserName,
-                Materials = data.Materials,
-                Warnings = data.Warnings
-            };
-
-            return Ok(await _producer.ProduceAsync(headers, message));
-        }
+        return Ok(await _producer.ProduceAsync(headers, message));
     }
 }

@@ -5,12 +5,20 @@ public class KafkaOptions
     public required string BootstrapServers { get; set; } = "localhost:9092";
     public required string SchemaRegistryUrl { get; set; } = "http://localhost:8081";
     public required string ConsumerGroupId { get; set; } = "Rodeo-Kafka-V1";
-    
-    
-    
-    
-    
-    
+
+
+    public string SecurityProtocol { get; set; } = "SecurityProtocol.Ssl";
+    public string SslCaLocation { get; set; } = "certs/ca.pem";
+    public string SslCertificateLocation { get; set; } = "certs/client.pem";
+    public string SslKeyLocation { get; set; } = "certs/client.key";
+    // Caso a chave tenha senha
+    // HasPassword ? true : false;
+    // SslKeyPassword = "senha-da-chave",
+
+    // (Opcional) Desativa validação de hostname
+    // SslEndpointIdentificationAlgorithm = SslEndpointIdentificationAlgorithm.None
+
+
     public required ConsumerContexts ConsumerContexts { get; set; }
     public required ProducerContexts ProducerContexts { get; set; }
 
